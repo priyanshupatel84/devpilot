@@ -1,5 +1,6 @@
 package devPilot.backend.config;
 
+import devPilot.backend.security.GithubOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -17,7 +18,7 @@ import org.springframework.security.web.authentication.*;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-
+    private final GithubOAuth2UserService githubOauth2UserService;
     private final AuthenticationSuccessHandler oauth2SuccessHandler;
     private final AuthenticationFailureHandler oauth2FailureHandler;
 
@@ -40,9 +41,9 @@ public class SecurityConfig {
                 .exceptionHandling(ex-> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(userInfo -> userInfo
-                        .userService(githubOauth2UserService)
+                                .userService(githubOauth2UserService))
                         .successHandler(oauth2SuccessHandler)
-                        .failureHandler(oauth2FailureHandler)))
+                        .failureHandler(oauth2FailureHandler))
                         .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
                         .logoutSuccessHandler((request, response, authentication) -> response.setStatus(HttpStatus.NO_CONTENT.value()))

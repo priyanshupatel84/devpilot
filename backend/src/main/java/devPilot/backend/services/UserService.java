@@ -19,7 +19,7 @@ public class UserService {
     public User upsertFromGithub(Map<String, Object> attributes, String accessToken, String scopes) {
         Long githubId = toLong(attributes.get("id"));
         String login = String.valueOf(attributes.get("login"));
-        String name = attribute.get("name") != null ? String.valueOf(attributes.get("name")) : login;
+        String name = attributes.get("name") != null ? String.valueOf(attributes.get("name")) : login;
         String avatarUrl = attributes.get("avatar_url") != null ? String.valueOf(attributes.get("avatar_url")) : null;
 
         String encryptedToken = tokenEncryptor.encrypt(accessToken);
@@ -33,12 +33,6 @@ public class UserService {
         user.setTokenScopes(scopes);
 
         return userRepository.save(user);
-
-
-
-
-
-        throw new UnsupportedOperationException("Unimplemented method 'upsertFromGithub'");
     }
 
 
