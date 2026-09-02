@@ -1,6 +1,6 @@
-package devPilot.backend.repository;
+package devpilot.backend.repository;
 
-import devPilot.backend.entity.User;
+import devpilot.backend.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

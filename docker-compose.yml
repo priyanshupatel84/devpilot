@@ -1,21 +1,66 @@
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: devpilot-postgres 
+    container_name: devpilot-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_DB: devpilot
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
-      - "5433:5433"
+      # host:container - postgres always listens on 5432 inside the container
+      # in docker container postgres listens on 5432, and outside the container, you can access it on 5433 (or whatever you set POSTGRES_PORT to)
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - devpilot_pg_data:/var/lib/postgresql/data
       - ./docker/postgres/init-extensions.sql:/docker-entrypoint-initdb.d/01-extensions.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d devpilot"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d devpilot"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - devpilot
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: devpilot-ollama
+    restart: unless-stopped
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_KEEP_ALIVE: 24h
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - devpilot_ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - devpilot
+
+  # One-shot job: pulls the models the backend needs, then exits.
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: devpilot-ollama-pull
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command: "ollama pull llama3.1:8b && ollama pull nomic-embed-text"
+    restart: "no"
+    networks:
+      - devpilot
+
+networks:
+  devpilot:
+    driver: bridge
 
 volumes:
   devpilot_pg_data:
+  devpilot_ollama_data:
